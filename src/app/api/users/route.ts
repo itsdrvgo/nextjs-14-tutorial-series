@@ -1,24 +1,71 @@
+import { db } from "@/lib/drizzle";
+import { users } from "@/lib/drizzle/schema";
 import {
     createUserSchema,
     safeUsersArraySchema,
     safeUserSchema,
-    UserData,
 } from "@/lib/validations";
+import { DrizzleError, eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 import { ZodError } from "zod";
 
-const users: UserData[] = [];
-
 export async function GET() {
-    return NextResponse.json(
-        {
-            data: safeUsersArraySchema.parse(users),
-        },
-        {
-            status: 200,
-            statusText: "Ok",
-        }
-    );
+    try {
+        const allUsers = await db.query.users.findMany();
+
+        return NextResponse.json(
+            {
+                data: safeUsersArraySchema.parse(allUsers),
+            },
+            {
+                status: 200,
+                statusText: "Ok",
+            }
+        );
+    } catch (err) {
+        if (err instanceof ZodError)
+            return NextResponse.json(
+                {
+                    longMessage: err.issues
+                        .map((issue) => issue.message)
+                        .join(", "),
+                },
+                {
+                    status: 400,
+                    statusText: "Bad Request",
+                }
+            );
+        else if (err instanceof DrizzleError)
+            return NextResponse.json(
+                {
+                    longMessage: err.message,
+                },
+                {
+                    status: 400,
+                    statusText: "Bad Request",
+                }
+            );
+        else if (err instanceof Error)
+            return NextResponse.json(
+                {
+                    longMessage: err.message,
+                },
+                {
+                    status: 400,
+                    statusText: "Bad Request",
+                }
+            );
+        else
+            return NextResponse.json(
+                {
+                    longMessage: "An unexpected error occurred",
+                },
+                {
+                    status: 500,
+                    statusText: "Internal Server Error",
+                }
+            );
+    }
 }
 
 export async function POST(req: NextRequest) {
@@ -26,14 +73,16 @@ export async function POST(req: NextRequest) {
         const body = await req.json();
         const user = createUserSchema.parse(body);
 
-        if (users.some((u) => u.username === user.username))
-            throw new Error("Username already exists");
+        const existingUser = await db.query.users.findFirst({
+            where: eq(users.username, user.username),
+        });
+        if (existingUser) throw new Error("Username already exists");
 
-        users.push(user);
+        const newUser = (await db.insert(users).values(user).returning())[0];
 
         return NextResponse.json(
             {
-                data: safeUserSchema.parse(user),
+                data: safeUserSchema.parse(newUser),
             },
             {
                 status: 201,
@@ -47,6 +96,16 @@ export async function POST(req: NextRequest) {
                     longMessage: err.issues
                         .map((issue) => issue.message)
                         .join(", "),
+                },
+                {
+                    status: 400,
+                    statusText: "Bad Request",
+                }
+            );
+        else if (err instanceof DrizzleError)
+            return NextResponse.json(
+                {
+                    longMessage: err.message,
                 },
                 {
                     status: 400,

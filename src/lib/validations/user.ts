@@ -1,8 +1,7 @@
 import { z } from "zod";
-import { generateId } from "../utils";
 
 export const userSchema = z.object({
-    id: z.number().int().positive(),
+    id: z.string().length(16),
     username: z
         .string({
             required_error: "Username is required",
@@ -17,15 +16,10 @@ export const userSchema = z.object({
             /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[$@$!%*?&])[A-Za-z\d$@$!%*?&]{8,}$/,
             "Password must contain at least 1 uppercase, 1 lowercase, 1 number, and 1 special character"
         ),
+    createdAt: z.date(),
 });
 
-export const createUserSchema = userSchema.extend({
-    id: z
-        .number()
-        .int()
-        .positive()
-        .default(() => generateId()),
-});
+export const createUserSchema = userSchema.omit({ id: true, createdAt: true });
 
 export const safeUserSchema = userSchema.omit({ password: true });
 export const safeUsersArraySchema = z.array(safeUserSchema);
