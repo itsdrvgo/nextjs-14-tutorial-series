@@ -20,10 +20,20 @@ export const userSchema = z.object({
 });
 
 export const createUserSchema = userSchema.omit({ id: true, createdAt: true });
+export const updateUserSchema = userSchema
+    .pick({ username: true })
+    .partial()
+    .refine(
+        (data) => {
+            return Object.keys(data).length > 0;
+        },
+        { message: "At least one field is required" }
+    );
 
 export const safeUserSchema = userSchema.omit({ password: true });
 export const safeUsersArraySchema = z.array(safeUserSchema);
 
 export type UserData = z.infer<typeof userSchema>;
 export type CreateUserData = z.infer<typeof createUserSchema>;
+export type UpdateUserData = z.infer<typeof updateUserSchema>;
 export type SafeUserData = z.infer<typeof safeUserSchema>;

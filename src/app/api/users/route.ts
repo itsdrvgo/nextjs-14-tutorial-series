@@ -1,70 +1,24 @@
 import { db } from "@/lib/drizzle";
 import { users } from "@/lib/drizzle/schema";
+import { CResponse, handleError } from "@/lib/utils";
 import {
     createUserSchema,
     safeUsersArraySchema,
     safeUserSchema,
 } from "@/lib/validations";
-import { DrizzleError, eq } from "drizzle-orm";
-import { NextRequest, NextResponse } from "next/server";
-import { ZodError } from "zod";
+import { eq } from "drizzle-orm";
+import { NextRequest } from "next/server";
 
 export async function GET() {
     try {
         const allUsers = await db.query.users.findMany();
 
-        return NextResponse.json(
-            {
-                data: safeUsersArraySchema.parse(allUsers),
-            },
-            {
-                status: 200,
-                statusText: "Ok",
-            }
-        );
+        return CResponse({
+            message: "OK",
+            data: safeUsersArraySchema.parse(allUsers),
+        });
     } catch (err) {
-        if (err instanceof ZodError)
-            return NextResponse.json(
-                {
-                    longMessage: err.issues
-                        .map((issue) => issue.message)
-                        .join(", "),
-                },
-                {
-                    status: 400,
-                    statusText: "Bad Request",
-                }
-            );
-        else if (err instanceof DrizzleError)
-            return NextResponse.json(
-                {
-                    longMessage: err.message,
-                },
-                {
-                    status: 400,
-                    statusText: "Bad Request",
-                }
-            );
-        else if (err instanceof Error)
-            return NextResponse.json(
-                {
-                    longMessage: err.message,
-                },
-                {
-                    status: 400,
-                    statusText: "Bad Request",
-                }
-            );
-        else
-            return NextResponse.json(
-                {
-                    longMessage: "An unexpected error occurred",
-                },
-                {
-                    status: 500,
-                    statusText: "Internal Server Error",
-                }
-            );
+        return handleError(err);
     }
 }
 
@@ -80,57 +34,11 @@ export async function POST(req: NextRequest) {
 
         const newUser = (await db.insert(users).values(user).returning())[0];
 
-        return NextResponse.json(
-            {
-                data: safeUserSchema.parse(newUser),
-            },
-            {
-                status: 201,
-                statusText: "Created",
-            }
-        );
+        return CResponse({
+            message: "CREATED",
+            data: safeUserSchema.parse(newUser),
+        });
     } catch (err) {
-        if (err instanceof ZodError)
-            return NextResponse.json(
-                {
-                    longMessage: err.issues
-                        .map((issue) => issue.message)
-                        .join(", "),
-                },
-                {
-                    status: 400,
-                    statusText: "Bad Request",
-                }
-            );
-        else if (err instanceof DrizzleError)
-            return NextResponse.json(
-                {
-                    longMessage: err.message,
-                },
-                {
-                    status: 400,
-                    statusText: "Bad Request",
-                }
-            );
-        else if (err instanceof Error)
-            return NextResponse.json(
-                {
-                    longMessage: err.message,
-                },
-                {
-                    status: 400,
-                    statusText: "Bad Request",
-                }
-            );
-        else
-            return NextResponse.json(
-                {
-                    longMessage: "An unexpected error occurred",
-                },
-                {
-                    status: 500,
-                    statusText: "Internal Server Error",
-                }
-            );
+        return handleError(err);
     }
 }

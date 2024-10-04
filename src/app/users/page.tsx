@@ -1,5 +1,6 @@
 "use client";
 
+import { Icons } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import {
     Card,
@@ -9,19 +10,46 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card";
-import { SafeUserData } from "@/lib/validations";
-import { useQuery } from "@tanstack/react-query";
+import { cFetch } from "@/lib/utils";
+import { ResponseData, SafeUserData } from "@/lib/validations";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 export default function Page() {
     const router = useRouter();
 
-    const { data: users, isPending } = useQuery({
+    const {
+        data: users,
+        isPending,
+        refetch,
+    } = useQuery({
         queryKey: ["users"],
         queryFn: async () => {
-            const res = await fetch("/api/users");
-            const data = await res.json();
-            return data.data as SafeUserData[];
+            const data =
+                await cFetch<ResponseData<SafeUserData[]>>("/api/users");
+            return data.data;
+        },
+    });
+
+    const { mutate: deleteUser, isPending: isDeleting } = useMutation({
+        onMutate: () => {
+            const toastId = toast.loading("Deleting user...");
+            return { toastId };
+        },
+        mutationFn: async (id: string) => {
+            const data = await cFetch<ResponseData>(`/api/users/${id}`, {
+                method: "DELETE",
+            });
+
+            if (data.longMessage) throw new Error(data.longMessage);
+        },
+        onSuccess: (_, __, { toastId }) => {
+            toast.success("User deleted", { id: toastId });
+            refetch();
+        },
+        onError: (err, _, ctx) => {
+            toast.error(err.message, { id: ctx?.toastId });
         },
     });
 
@@ -43,7 +71,37 @@ export default function Page() {
                                     key={user.id}
                                     className="rounded-md bg-muted p-2 text-sm text-muted-foreground"
                                 >
-                                    {user.id} - {user.username}
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            {user.id} - {user.username}
+                                        </div>
+
+                                        <div className="flex items-center gap-2">
+                                            <Button
+                                                size="icon"
+                                                className="size-8"
+                                                onClick={() =>
+                                                    router.push(
+                                                        `/users/u/${user.id}`
+                                                    )
+                                                }
+                                            >
+                                                <Icons.view className="size-4" />
+                                            </Button>
+
+                                            <Button
+                                                size="icon"
+                                                className="size-8"
+                                                variant="destructive"
+                                                disabled={isDeleting}
+                                                onClick={() =>
+                                                    deleteUser(user.id)
+                                                }
+                                            >
+                                                <Icons.trash className="size-4" />
+                                            </Button>
+                                        </div>
+                                    </div>
                                 </div>
                             ))
                         ) : (

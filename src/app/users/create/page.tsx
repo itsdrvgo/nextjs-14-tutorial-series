@@ -18,7 +18,13 @@ import {
     FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { CreateUserData, createUserSchema } from "@/lib/validations";
+import { cFetch } from "@/lib/utils";
+import {
+    CreateUserData,
+    createUserSchema,
+    ResponseData,
+    SafeUserData,
+} from "@/lib/validations";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
@@ -42,14 +48,15 @@ export default function Page() {
             return { toastId };
         },
         mutationFn: async (values: CreateUserData) => {
-            const res = await fetch("/api/users", {
-                method: "POST",
-                body: JSON.stringify(values),
-            });
+            const data = await cFetch<ResponseData<SafeUserData>>(
+                "/api/users",
+                {
+                    method: "POST",
+                    body: JSON.stringify(values),
+                }
+            );
 
-            const data = await res.json();
             if (data.longMessage) throw new Error(data.longMessage);
-
             return data.data;
         },
         onSuccess: (_, __, { toastId }) => {
