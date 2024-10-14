@@ -1,5 +1,7 @@
+import { DashboardPage } from "@/components/dashboard";
 import { db } from "@/lib/drizzle";
 import { users } from "@/lib/drizzle/schema";
+import { safeUserSchema } from "@/lib/validations";
 import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
 import { eq } from "drizzle-orm";
 import { cookies } from "next/headers";
@@ -22,5 +24,7 @@ export default async function Page() {
     });
     if (!dbUser) redirect("/auth/signin");
 
-    return <div></div>;
+    const parsedUser = safeUserSchema.parse(dbUser);
+
+    return <DashboardPage user={parsedUser} />;
 }

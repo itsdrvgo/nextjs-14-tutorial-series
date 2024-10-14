@@ -1,4 +1,5 @@
 import { init } from "@paralleldrive/cuid2";
+import { AuthApiError, AuthError } from "@supabase/supabase-js";
 import { clsx, type ClassValue } from "clsx";
 import { DrizzleError } from "drizzle-orm";
 import { NextResponse } from "next/server";
@@ -42,7 +43,24 @@ export function handleError(err: unknown) {
             },
             {
                 status: 400,
-                statusText: "Bad Request",
+            }
+        );
+    else if (err instanceof AuthError)
+        return NextResponse.json(
+            {
+                longMessage: err.message,
+            },
+            {
+                status: err.status,
+            }
+        );
+    else if (err instanceof AuthApiError)
+        return NextResponse.json(
+            {
+                longMessage: err.message,
+            },
+            {
+                status: err.status,
             }
         );
     else if (err instanceof DrizzleError)
@@ -52,7 +70,6 @@ export function handleError(err: unknown) {
             },
             {
                 status: 400,
-                statusText: "Bad Request",
             }
         );
     else if (err instanceof Error)
@@ -62,7 +79,6 @@ export function handleError(err: unknown) {
             },
             {
                 status: 400,
-                statusText: "Bad Request",
             }
         );
     else

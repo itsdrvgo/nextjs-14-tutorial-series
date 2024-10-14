@@ -1,7 +1,5 @@
-import { db } from "@/lib/drizzle";
-import { users } from "@/lib/drizzle/schema";
+import { SignUpPage } from "@/components/auth";
 import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
-import { eq } from "drizzle-orm";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
@@ -15,12 +13,7 @@ export default async function Page() {
     const {
         data: { user },
     } = await supabase.auth.getUser();
-    if (!user) redirect("/auth/signin");
+    if (user) redirect("/dashboard");
 
-    const dbUser = await db.query.users.findFirst({
-        where: eq(users.id, user.id),
-    });
-    if (!dbUser) redirect("/auth/signin");
-
-    return <div></div>;
+    return <SignUpPage />;
 }

@@ -20,56 +20,58 @@ import {
 import { Input } from "@/components/ui/input";
 import { cFetch } from "@/lib/utils";
 import {
-    CreateUserData,
-    createUserSchema,
     ResponseData,
     SafeUserData,
+    SignUpData,
+    signUpSchema,
 } from "@/lib/validations";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
-export default function Page() {
+export function SignUpPage() {
     const router = useRouter();
 
-    const form = useForm<CreateUserData>({
-        resolver: zodResolver(createUserSchema),
+    const form = useForm<SignUpData>({
+        resolver: zodResolver(signUpSchema),
         defaultValues: {
             username: "",
+            email: "",
             password: "",
+            confirmPassword: "",
         },
     });
 
-    const { mutate: createUser, isPending } = useMutation({
+    const { mutate: signUp, isPending: isSigninUp } = useMutation({
         onMutate: () => {
-            const toastId = toast.loading("Creating user...");
+            const toastId = toast.loading("Creating account...");
             return { toastId };
         },
-        mutationFn: async (values: CreateUserData) => {
+        mutationFn: async (values: SignUpData) => {
             const data = await cFetch<ResponseData<SafeUserData>>(
-                "/api/users",
+                "/api/auth/signup",
                 {
                     method: "POST",
                     body: JSON.stringify(values),
                 }
             );
 
-            if (data.longMessage) throw new Error(data.longMessage);
-            return data.data;
+            if (!data.success) throw new Error(data.longMessage);
+            return data.data!;
         },
-        onSuccess: (_, __, { toastId }) => {
-            toast.success("User created successfully", {
+        onSuccess: (data, __, { toastId }) => {
+            toast.success(`Welcome, ${data.username}!`, {
                 id: toastId,
             });
-            router.push("/users");
+            router.push("/dashboard");
         },
-        onError: (err, _, ctx) => {
-            return toast.error(err.message, {
+        onError: (err, _, ctx) =>
+            toast.error(err.message, {
                 id: ctx?.toastId,
-            });
-        },
+            }),
     });
 
     return (
@@ -77,15 +79,18 @@ export default function Page() {
             <div className="w-full max-w-md">
                 <Card>
                     <CardHeader>
-                        <CardTitle>Create User</CardTitle>
-                        <CardDescription>Create a new user</CardDescription>
+                        <CardTitle>Create an Account</CardTitle>
+                        <CardDescription>
+                            <span>Already have an account? </span>
+                            <Link href="/auth/signin" className="text-blue-500">
+                                Sign in
+                            </Link>
+                        </CardDescription>
                     </CardHeader>
 
                     <Form {...form}>
                         <form
-                            onSubmit={form.handleSubmit((data) =>
-                                createUser(data)
-                            )}
+                            onSubmit={form.handleSubmit((data) => signUp(data))}
                         >
                             <CardContent className="space-y-4">
                                 <FormField
@@ -97,6 +102,24 @@ export default function Page() {
                                             <FormControl>
                                                 <Input
                                                     placeholder="Enter username"
+                                                    {...field}
+                                                />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+
+                                <FormField
+                                    control={form.control}
+                                    name="email"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Email</FormLabel>
+                                            <FormControl>
+                                                <Input
+                                                    type="email"
+                                                    placeholder="Enter email"
                                                     {...field}
                                                 />
                                             </FormControl>
@@ -122,26 +145,37 @@ export default function Page() {
                                         </FormItem>
                                     )}
                                 />
+
+                                <FormField
+                                    control={form.control}
+                                    name="confirmPassword"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>
+                                                Confirm Password
+                                            </FormLabel>
+                                            <FormControl>
+                                                <Input
+                                                    type="password"
+                                                    placeholder="Confirm password"
+                                                    {...field}
+                                                />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
                             </CardContent>
 
-                            <CardFooter className="flex-col gap-2">
+                            <CardFooter>
                                 <Button
                                     type="submit"
                                     className="w-full"
                                     disabled={
-                                        isPending || !form.formState.isDirty
+                                        isSigninUp || !form.formState.isDirty
                                     }
                                 >
-                                    Create
-                                </Button>
-
-                                <Button
-                                    type="button"
-                                    className="w-full"
-                                    variant="outline"
-                                    onClick={() => router.push("/users")}
-                                >
-                                    Go Back
+                                    Sign Up
                                 </Button>
                             </CardFooter>
                         </form>
