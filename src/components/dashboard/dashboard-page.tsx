@@ -40,7 +40,7 @@ export function DashboardPage({ user }: PageProps) {
 
     return (
         <section className="flex h-screen items-center justify-center space-y-5 p-5">
-            <div className="w-full max-w-md">
+            <div className="w-full max-w-md space-y-2">
                 <div className="flex items-center justify-between gap-2 rounded-xl bg-background p-5 shadow-md">
                     <p>Logged in as {user.username}</p>
                     <Button
@@ -51,6 +51,13 @@ export function DashboardPage({ user }: PageProps) {
                         Logout
                     </Button>
                 </div>
+
+                <Button
+                    className="w-full"
+                    onClick={() => router.push("/posts/create")}
+                >
+                    Create Post
+                </Button>
             </div>
         </section>
     );
