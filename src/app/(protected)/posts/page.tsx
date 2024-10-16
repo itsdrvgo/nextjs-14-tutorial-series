@@ -1,62 +1,21 @@
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardFooter,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card";
-import { db } from "@/lib/drizzle";
-import { users } from "@/lib/drizzle/schema";
-import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
-import { format } from "date-fns";
-import { eq } from "drizzle-orm";
-import { cookies } from "next/headers";
+import { PostsPage } from "@/components/posts";
+import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
-import { redirect } from "next/navigation";
+import { Suspense } from "react";
 
-export default async function Page() {
-    const cookieStore = cookies();
-
-    const supabase = createServerComponentClient({
-        cookies: () => cookieStore,
-    });
-
-    const {
-        data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) redirect("/auth/signin");
-
-    const dbUser = await db.query.users.findFirst({
-        where: eq(users.id, user.id),
-    });
-    if (!dbUser) redirect("/auth/signin");
-
-    const userPosts = await db.query.posts.findMany({
-        with: {
-            author: true,
-        },
-    });
-
+export default function Page() {
     return (
         <section className="flex h-screen items-center justify-center space-y-5 p-5">
             <div className="w-full max-w-md space-y-2">
-                {userPosts.map((post) => (
-                    <Card key={post.id}>
-                        <CardHeader>
-                            <CardTitle>{post.author.username}</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <CardDescription>{post.content}</CardDescription>
-                        </CardContent>
-                        <CardFooter>
-                            <p>
-                                Author:{" "}
-                                {format(new Date(post.createdAt), "dd/MM/yyyy")}
-                            </p>
-                        </CardFooter>
-                    </Card>
-                ))}
+                <h1 className="text-center text-3xl font-semibold">Posts</h1>
+
+                <Suspense
+                    fallback={Array.from({ length: 2 }).map((_, i) => (
+                        <Skeleton key={i} className="h-32 w-full" />
+                    ))}
+                >
+                    <PostsPage />
+                </Suspense>
 
                 <Link
                     href="/posts/create"

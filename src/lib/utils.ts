@@ -7,6 +7,10 @@ import { twMerge } from "tailwind-merge";
 import { ZodError } from "zod";
 import { ResponseMessages } from "./validations";
 
+export async function wait(ms: number) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 export function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
 }
