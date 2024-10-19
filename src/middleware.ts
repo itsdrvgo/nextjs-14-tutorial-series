@@ -5,6 +5,8 @@ export async function middleware(req: NextRequest) {
     const url = new URL(req.url);
     const res = NextResponse.next();
 
+    if (url.pathname.startsWith("/api/uploadthing")) return res;
+
     if (url.pathname === "/drvgo")
         return NextResponse.redirect("https://itsdrvgo.me/");
 
@@ -37,6 +39,7 @@ export const config = {
         "/dashboard/:path*",
         "/",
         "/posts/:path*",
+        "/api/:path*",
         "/drvgo",
     ],
 };

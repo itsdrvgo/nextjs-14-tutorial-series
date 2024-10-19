@@ -1,7 +1,6 @@
 import {
     Card,
     CardContent,
-    CardDescription,
     CardFooter,
     CardHeader,
     CardTitle,
@@ -11,6 +10,7 @@ import { posts } from "@/lib/drizzle/schema";
 import { format } from "date-fns";
 import { eq } from "drizzle-orm";
 import { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -69,7 +69,19 @@ export default async function Page({ params }: PageProps) {
                         <CardTitle>{post.author.username}</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <CardDescription>{post.content}</CardDescription>
+                        <p>{post.content}</p>
+
+                        {post.imageUrl && (
+                            <div className="aspect-video overflow-hidden rounded-md">
+                                <Image
+                                    src={post.imageUrl}
+                                    alt="Post image"
+                                    width={500}
+                                    height={500}
+                                    className="size-full object-cover"
+                                />
+                            </div>
+                        )}
                     </CardContent>
                     <CardFooter>
                         <p>

@@ -1,9 +1,12 @@
-import type { Metadata } from "next";
-import "./globals.css";
 import { ClientProvider } from "@/components/providers/client";
 import { Toaster } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
+import { NextSSRPlugin } from "@uploadthing/react/next-ssr-plugin";
+import type { Metadata } from "next";
 import { Titillium_Web } from "next/font/google";
+import { extractRouterConfig } from "uploadthing/server";
+import { ourFileRouter } from "./api/uploadthing/core";
+import "./globals.css";
 
 const font = Titillium_Web({
     subsets: ["latin"],
@@ -31,6 +34,10 @@ export default function RootLayout({
                     "min-h-screen overflow-x-hidden antialiased"
                 )}
             >
+                <NextSSRPlugin
+                    routerConfig={extractRouterConfig(ourFileRouter)}
+                />
+
                 <ClientProvider>
                     {children}
                     <Toaster />

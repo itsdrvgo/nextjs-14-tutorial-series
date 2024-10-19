@@ -26,8 +26,15 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
     try {
-        const body = await req.json();
-        const { content } = createPostSchema.parse(body);
+        const form = await req.formData();
+
+        const contentRaw = form.get("content");
+        const imageUrlRaw = form.get("imageUrl") ?? null;
+
+        const { content, imageUrl } = createPostSchema.parse({
+            content: contentRaw,
+            imageUrl: imageUrlRaw,
+        });
 
         const userId = req.headers.get("x-user-id");
         if (!userId) throw new Error("User not found");
@@ -37,6 +44,7 @@ export async function POST(req: NextRequest) {
             .values({
                 content,
                 authorId: userId,
+                imageUrl,
             })
             .returning()
             .then((res) => res[0]);

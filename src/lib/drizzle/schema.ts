@@ -18,6 +18,7 @@ export const posts = pgTable("next_14_series__posts", {
         .notNull()
         .references(() => users.id),
     content: text("content").notNull(),
+    imageUrl: text("image_url"),
     createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

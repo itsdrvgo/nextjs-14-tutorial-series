@@ -9,6 +9,7 @@ import {
     FormLabel,
 } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
+import { UploadDropzone } from "@/components/ui/uploadthing";
 import { cFetch } from "@/lib/utils";
 import {
     CreatePostData,
@@ -17,6 +18,7 @@ import {
 } from "@/lib/validations";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -26,6 +28,10 @@ export function PostCreatePage() {
 
     const form = useForm<CreatePostData>({
         resolver: zodResolver(createPostSchema),
+        defaultValues: {
+            content: "",
+            imageUrl: null,
+        },
     });
 
     const { mutate: createPost, isPending } = useMutation({
@@ -34,9 +40,14 @@ export function PostCreatePage() {
             return { toastId };
         },
         mutationFn: async (values: CreatePostData) => {
+            const formdata = new FormData();
+
+            formdata.append("content", values.content);
+            if (values.imageUrl) formdata.append("imageUrl", values.imageUrl);
+
             const data = await cFetch<ResponseData>("/api/posts", {
                 method: "POST",
-                body: JSON.stringify(values),
+                body: formdata,
             });
 
             if (!data.success) throw new Error(data.longMessage);
@@ -75,6 +86,29 @@ export function PostCreatePage() {
                                     </FormControl>
                                 </FormItem>
                             )}
+                        />
+
+                        {form.watch("imageUrl") && (
+                            <div className="aspect-video overflow-hidden rounded-md">
+                                <Image
+                                    src={form.watch("imageUrl") as string}
+                                    alt="Post image"
+                                    className="size-full object-cover"
+                                    width={500}
+                                    height={500}
+                                />
+                            </div>
+                        )}
+
+                        <UploadDropzone
+                            endpoint="imageUploader"
+                            onUploadError={(error: Error) => {
+                                toast.error(error.message);
+                            }}
+                            onClientUploadComplete={(res) => {
+                                const file = res[0];
+                                form.setValue("imageUrl", file.url);
+                            }}
                         />
 
                         <Button type="submit" disabled={isPending}>

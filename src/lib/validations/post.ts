@@ -9,10 +9,14 @@ export const postSchema = z.object({
         })
         .min(3, "Content must be at least 3 characters long")
         .max(2000, "Content must be at most 2000 characters long"),
+    imageUrl: z.string().min(1, "Image URL is required").url().nullable(),
     createdAt: z.date(),
 });
 
-export const createPostSchema = postSchema.pick({ content: true });
+export const createPostSchema = postSchema.pick({
+    content: true,
+    imageUrl: true,
+});
 
 export type PostData = z.infer<typeof postSchema>;
 export type CreatePostData = z.infer<typeof createPostSchema>;
